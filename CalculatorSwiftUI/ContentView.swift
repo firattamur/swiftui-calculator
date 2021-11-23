@@ -22,12 +22,27 @@ enum CalculationButton: String {
     case add = "+"
     case subtract = "-"
     case divide = "/"
-    case multiply = "*"
+    case multiply = "x"
     case equal = "="
     case clear = "AC"
     case decimal = ","
     case percent = "%"
     case negative = "+/-"
+    
+    var buttonColor: Color {
+        switch self {
+            
+        case .multiply, .divide, .subtract, .add, .equal:
+            return .orange
+            
+        case .clear, .percent, .negative:
+            return Color(.lightGray)
+            
+        default:
+            return Color(UIColor(red: 55/255, green: 55/255, blue: 55/255, alpha: 1))
+            
+        }
+    }
     
 }
 
@@ -43,21 +58,30 @@ struct ContentView: View {
     
     ]
     
+    @State var value = "0"
+    @State var pastValue: String = "0"
+    @State var selectedOperation : CalculationButton = .clear
+
+    let textLimit    = 11
+    
     var body: some View {
         
         ZStack {
-            Color.black.edgesIgnoringSafeArea(.all)
-            
+            Color.white.edgesIgnoringSafeArea(.all)
+        
             VStack {
+                Spacer()
                 
                 // result of calculation
                 HStack {
                     
                     Spacer()
-                    Text("0")
+                    Text(value)
                         .bold()
-                        .font(.system(size: 64))
-                        .foregroundColor(Color.white)
+                        .font(.system(size: 80))
+                        .foregroundColor(Color.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.50)
     
                 }
                 .padding()
@@ -68,16 +92,17 @@ struct ContentView: View {
                         ForEach(row, id: \.self) { item in
                             
                             Button {
-                                print("Hello")
+                                self.didTapButton(button: item)
                             } label: {
                                 Text(item.rawValue)
-                                    .font(.system(size: 40))
+                                    .font(.system(size: 32))
                                     .bold()
                                     .frame(width: self.buttonWidth(item: item),
-                                           height: 70, alignment: .center)
-                                    .background(Color.orange)
+                                           height: self.buttonHeight(),
+                                           alignment: .center)
+                                    .background(item.buttonColor)
                                     .foregroundColor(.white)
-                                    .cornerRadius(35)
+                                    .cornerRadius(self.buttonWidth(item: item) / 2)
                             }
                         }
                     }
@@ -87,11 +112,88 @@ struct ContentView: View {
         }
     }
     
-    func buttonWidth(item: CalculationButton) -> CGFloat {
-        return (UIScreen.main.bounds.width - (5 * 12))
+    func didTapButton(button: CalculationButton) {
+        
+        switch button {
+            
+        case .add, .subtract, .divide, .multiply, .equal:
+            
+            if self.selectedOperation == .clear {
+                self.pastValue = self.value
+                self.selectedOperation = button
+                self.setValue(value: "0")
+            }else {
+                self.selectedOperation = .clear
+                self.handleOperation(number: self.value, operation: button)
+            }
+            
+        case .clear:
+            self.value = "0"
+        case .decimal, .negative, .percent:
+            break
+        default:
+            
+            // no more than 10^9 numbers like in iOS default calculator
+            if self.value.count == 11 {
+                break
+            }
+            
+            let number = button.rawValue
+            
+            if self.value == "0" {
+                value = number
+            }else {
+    
+                if self.value.count == 3 || self.value.count == 7 {
+                    setValue(value: "\(self.value),")
+                }
+                    
+                setValue(value: "\(self.value)\(number)")
+                
+            }
+                
+        }
+        
     }
     
-    func button
+    func setValue(value: String) {
+        if value.count > self.textLimit {
+            self.value = String(value.prefix(textLimit))
+        }else {
+            self.value = value
+        }
+    }
+    
+    func getNumber(value: String) {
+        
+        
+        
+    }
+    
+    func handleOperation(number: String, operation: CalculationButton) {
+ 
+        if operation == .add {
+            let pastNumber = self.getNumber(self.pastValue)
+            let number = self.getNumber(number)
+            
+            self.setValue(value: "\(pastNumber + number)")
+            
+        }
+            
+    }
+    
+    func buttonWidth(item: CalculationButton) -> CGFloat {
+        
+        if item == .zero {
+            return ((UIScreen.main.bounds.width - (4 * 12)) / 4) * 2
+        }
+        
+        return (UIScreen.main.bounds.width - (5 * 12)) / 4
+    }
+    
+    func buttonHeight() -> CGFloat {
+        return (UIScreen.main.bounds.width - (5 * 12)) / 4
+    }
     
 }
 
