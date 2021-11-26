@@ -21,9 +21,8 @@ struct ContentView: View {
         [.zero, .decimal, .equal]
     ]
     
-    @State var lastValue = "0"
-    @State var value     = "0"
-    @State var operation : CalculatorOperations = .none
+    @State var value = "0"
+    var utils = Utils()
     
     var body: some View {
     
@@ -74,7 +73,7 @@ struct ContentView: View {
     }
     
     func didTapButton(button: CalculatorButton) {
-        
+        self.value = utils.handleTap(button: button)
     }
     
     func buttonWidth(item: CalculatorButton) -> CGFloat {
