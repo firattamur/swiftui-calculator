@@ -9,68 +9,96 @@ import Foundation
 
 class Utils {
     
-    let numLimit  : Float = 1000000000
+    let numLimit  : Float32 = 1000000000
     
     // calculation value and operations
-    var value     : Float = 0
-    var lastValue : Float = 0
-    var operation : CalculatorButton = .none
+    var value     : String = "0"
+    var lastValue : String = "0"
+    var operation : CalculatorButton = .zero
+    var lastButton: CalculatorButton = .zero
     
     func handleTap(button: CalculatorButton) -> String {
+        
+        var result = ""
         
         switch button {
             
         case .clear:
             
             if operation == .zero {
-                self.value = 0
+                self.value = "0"
             }else {
-                self.value = 0
+                self.value = "0"
                 self.operation = .zero
             }
 
-            return "0"
+            result = "0"
         
         case .negative:
-            return self.floatNumToStrNum(value: self.value * -1)
+            
+            guard (self.strNumtoFloatNum(value: self.value) != nil) else {
+                return "Not a Number"
+            }
+            
+            self.value = self.floatNumToStrNum(value: self.strNumtoFloatNum(value: self.value)! * -1)
+
+            result = self.value
             
         case .percent:
-            return self.floatNumToStrNum(value: self.value / 100)
+            
+            guard (self.strNumtoFloatNum(value: self.value) != nil) else {
+                return "Not a Number"
+            }
+            
+            self.value = self.floatNumToStrNum(value: self.strNumtoFloatNum(value: self.value)! / 100)
+
+            result = self.value
             
         case .divide, .multiply, .subtract, .add:
             
             self.operation = button
-            self.lastValue = self.value
             
-            return self.floatNumToStrNum(value: self.value)
-            
-        case .decimal:
-            break
-            
+            if self.lastButton == .equal {
+                self.value = lastValue
+                result = self.lastValue
+            }else {
+                self.lastValue = self.value
+                result = self.value
+            }
             
         case .equal:
             
-            self.value = self.calculate(button: self.operation,
-                                        value: self.value,  lastValue: self.lastValue)
+            guard (self.strNumtoFloatNum(value: self.value) != nil),
+                  (self.strNumtoFloatNum(value: self.lastValue) != nil) else {
+                return "Not a Number"
+            }
             
-            return self.floatNumToStrNum(value: self.value)
+            self.lastValue = self.floatNumToStrNum(value:
+                                                self.calculate(
+                                                    button: self.operation,
+                                                    value: self.strNumtoFloatNum(value: self.value)!,
+                                                    lastValue: self.strNumtoFloatNum(value: self.lastValue)!))
+            
+            result = self.lastValue
             
         default:
             
-            if self.value == 0 || (self.operation != .zero && self.value == self.lastValue) {
-                self.value = self.strNumtoFloatNum(value: button.rawValue)
+            if self.value == "0" ||
+                (self.operation != .zero && self.value == self.lastValue) ||
+                self.lastButton == .equal {
+                self.value = button.rawValue
                 
-                return self.floatNumToStrNum(value: self.value)
+                result = self.value
             }else {
-                let valueStr = self.floatNumToStrNum(value: self.value)
-                self.value   = self.strNumtoFloatNum(value: "\(valueStr)\(button.rawValue)")
+                self.value = "\(self.value)\(button.rawValue)"
                 
-                return "\(valueStr)\(button.rawValue)"
+                result = self.value
             }
       
         }
         
-        return ""
+        self.lastButton = button
+        return result
         
     }
     
@@ -109,12 +137,28 @@ class Utils {
         
     }
     
-    func strNumtoFloatNum(value: String) -> Float {
-        return Float(value)!
+    func strNumtoFloatNum(value: String) -> Float? {
+        
+        guard Float(value) != nil else {
+            return nil
+        }
+        
+        return Float(value)
     }
     
     func floatNumToScientificStr(value: Float) -> String {
-        return ""
+        
+        let formatter = NumberFormatter()
+        
+        formatter.numberStyle    = .scientific
+        formatter.positiveFormat = "0.##E+0"
+        formatter.exponentSymbol = "e"
+        
+        guard let scientificFormatted = formatter.string(for:value) else {
+            return String(value)
+        }
+        
+        return scientificFormatted
     }
 
     
